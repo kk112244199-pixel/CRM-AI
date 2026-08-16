@@ -39,13 +39,13 @@
       "handoffPath": "handoffs/s10-api.md",
       "startedAt": "2026-08-16T18:51:17.620Z",
       "finishedAt": "2026-08-16T18:54:24.972Z",
-      "lastUpdate": "2026-08-16T18:54:24.973Z",
+      "lastUpdate": "2026-08-16T18:54:25.977Z",
       "note": "respawned by self-planner (was error; attempts=1)",
       "attempts": 2,
       "slackTs": null,
       "prNumber": null,
       "failureMode": null,
-      "verification": null
+      "verification": "unit-test-verified"
     },
     {
       "name": "s10-web",
@@ -84,17 +84,18 @@
       "agentId": null,
       "runId": null,
       "parentAgentId": null,
-      "status": "pending",
+      "status": "running",
       "resultStatus": null,
       "handoffPath": null,
-      "startedAt": null,
+      "startedAt": "2026-08-16T18:54:33.108Z",
       "finishedAt": null,
-      "lastUpdate": null,
+      "lastUpdate": "2026-08-16T18:54:33.108Z",
       "note": null,
       "slackTs": null,
       "prNumber": null,
       "failureMode": null,
-      "verification": null
+      "verification": null,
+      "attempts": 1
     },
     {
       "name": "s10-docs",
@@ -167,6 +168,10 @@
     {
       "at": "2026-08-16T18:53:00.973Z",
       "message": "s10-web: verification self-reported (unit-test-verified)"
+    },
+    {
+      "at": "2026-08-16T18:54:25.977Z",
+      "message": "s10-api: verification self-reported (unit-test-verified)"
     }
   ]
 }
