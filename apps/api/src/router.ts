@@ -5,6 +5,7 @@ import {
   advanceStage,
   confirmHandoff,
   getLeadCard,
+  importLeadsFromCsv,
   ingestLead,
   isHarnessError,
   listLeadRows,
@@ -15,7 +16,13 @@ import {
   type HarnessCtx,
   type RunnerKind,
 } from "@hengce/harness";
-import { OPP_STAGES, type OppStage, type UserRole } from "@hengce/domain";
+import {
+  LEAD_STATUSES,
+  OPP_STAGES,
+  type LeadStatus,
+  type OppStage,
+  type UserRole,
+} from "@hengce/domain";
 import { handleHealth } from "./health";
 
 export type ApiCtx = HarnessCtx & { runnerKind: RunnerKind };
@@ -128,7 +135,36 @@ export async function handleApi(
     }
 
     if (method === "GET" && path === "/api/leads") {
-      return json(200, { leads: listLeadRows(ctx.db) });
+      const statusParam = parsedUrl.searchParams.get("status");
+      const stageParam = parsedUrl.searchParams.get("stage");
+      const filters: { status?: LeadStatus; stage?: OppStage } = {};
+      if (statusParam !== null && statusParam !== "") {
+        if (!LEAD_STATUSES.includes(statusParam as LeadStatus)) {
+          return json(400, { ok: false, error: "非法 status" });
+        }
+        filters.status = statusParam as LeadStatus;
+      }
+      if (stageParam !== null && stageParam !== "") {
+        if (!OPP_STAGES.includes(stageParam as OppStage)) {
+          return json(400, { ok: false, error: "非法 stage" });
+        }
+        filters.stage = stageParam as OppStage;
+      }
+      const hasFilter = filters.status !== undefined || filters.stage !== undefined;
+      return json(200, {
+        leads: listLeadRows(ctx.db, hasFilter ? filters : undefined),
+      });
+    }
+
+    if (method === "POST" && path === "/api/leads/import") {
+      const role = roleOf(req.headers);
+      const body = readJson(req.body);
+      const csv = typeof body.csv === "string" ? body.csv : "";
+      if (!csv.trim()) {
+        return json(400, { ok: false, error: "需要 csv" });
+      }
+      const result = importLeadsFromCsv(ctx, { csv, role });
+      return json(200, result);
     }
 
     const leadGet = path.match(/^\/api\/leads\/([^/]+)$/);

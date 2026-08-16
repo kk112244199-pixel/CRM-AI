@@ -12,6 +12,7 @@ export {
   advanceStage,
   confirmHandoff,
   getLeadCard,
+  importLeadsFromCsv,
   ingestLead,
   leadTimeline,
   listLeadRows,
@@ -20,7 +21,9 @@ export {
   rejectHandoff,
   usageBreakdown,
   usageTotals,
+  type CsvImportResult,
   type HarnessCtx,
+  type LeadListFilters,
 } from "./scheduler";
 export { scriptedRunner } from "./scripted-runner";
 export { searchSimilar, type SimilarHit } from "./search-similar";

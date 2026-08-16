@@ -1,6 +1,7 @@
 import { asc, eq } from "drizzle-orm";
 import {
   ACTIVITY_TYPES,
+  LEAD_STATUSES,
   OPP_STAGES,
   accounts,
   activities,
@@ -11,10 +12,12 @@ import {
   handoffs,
   leads,
   opportunities,
+  rebuildLeadVec,
   tokenLedger,
   type AgentId,
   type AppDb,
   type HitlKind,
+  type LeadStatus,
   type OppStage,
   type SqliteHandle,
   type UserRole,
@@ -853,13 +856,177 @@ export function listLeads(db: AppDb) {
   return db.select().from(leads).all();
 }
 
-export function listLeadRows(db: AppDb) {
+export type LeadListFilters = {
+  status?: LeadStatus;
+  stage?: OppStage;
+};
+
+export function listLeadRows(db: AppDb, filters?: LeadListFilters) {
   const all = listLeads(db);
   const opps = db.select().from(opportunities).all();
-  return all.map((l) => ({
+  let rows = all.map((l) => ({
     ...l,
     oppStage: opps.find((o) => o.leadId === l.id)?.stage ?? null,
   }));
+  if (filters?.status) {
+    rows = rows.filter((r) => r.status === filters.status);
+  }
+  if (filters?.stage) {
+    rows = rows.filter((r) => r.oppStage === filters.stage);
+  }
+  return rows;
+}
+
+export type CsvImportResult = {
+  ok: true;
+  imported: { id: string; company: string }[];
+  skipped: { company: string; reason: string }[];
+  errors: { line: number; message: string }[];
+};
+
+const CSV_REQUIRED = [
+  "company",
+  "industry",
+  "contactName",
+  "sourceSummary",
+] as const;
+
+function parseCsvLine(line: string): string[] {
+  const fields: string[] = [];
+  let cur = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i]!;
+    if (inQuotes) {
+      if (ch === '"') {
+        if (line[i + 1] === '"') {
+          cur += '"';
+          i++;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        cur += ch;
+      }
+    } else if (ch === '"') {
+      inQuotes = true;
+    } else if (ch === ",") {
+      fields.push(cur);
+      cur = "";
+    } else {
+      cur += ch;
+    }
+  }
+  fields.push(cur);
+  return fields;
+}
+
+function csvLeadId(db: AppDb, seq: number, company: string): string {
+  const slug =
+    company.replace(/[^\u4e00-\u9fffA-Za-z0-9]/g, "").slice(0, 16) || "row";
+  let id = `lead-csv-${slug}-${seq}`;
+  let n = seq;
+  while (db.select({ id: leads.id }).from(leads).where(eq(leads.id, id)).get()) {
+    n++;
+    id = `lead-csv-${slug}-${n}`;
+  }
+  return id;
+}
+
+/** CSV 批量导入新线索；不触发 ingest 或 Agent。 */
+export function importLeadsFromCsv(
+  ctx: HarnessCtx,
+  input: { csv: string; role: UserRole },
+): CsvImportResult {
+  if (!canMutate(input.role)) {
+    throw new HarnessError(403, "viewer 只读");
+  }
+
+  const imported: { id: string; company: string }[] = [];
+  const skipped: { company: string; reason: string }[] = [];
+  const errors: { line: number; message: string }[] = [];
+
+  const raw = input.csv.replace(/^\uFEFF/, "");
+  const lines = raw.split(/\r?\n/);
+  while (lines.length > 0 && lines[lines.length - 1]!.trim() === "") {
+    lines.pop();
+  }
+  if (lines.length === 0) {
+    errors.push({ line: 1, message: "CSV 为空" });
+    return { ok: true, imported, skipped, errors };
+  }
+
+  const header = parseCsvLine(lines[0]!);
+  const colIndex = new Map<string, number>();
+  header.forEach((name, i) => colIndex.set(name.trim(), i));
+
+  for (const col of CSV_REQUIRED) {
+    if (!colIndex.has(col)) {
+      errors.push({ line: 1, message: `缺少表头列 ${col}` });
+      return { ok: true, imported, skipped, errors };
+    }
+  }
+
+  const existing = new Set(
+    ctx.db.select({ company: leads.company }).from(leads).all().map((r) => r.company),
+  );
+  let seq = 0;
+
+  for (let i = 1; i < lines.length; i++) {
+    const lineNum = i + 1;
+    const line = lines[i]!;
+    if (line.trim() === "") continue;
+
+    const fields = parseCsvLine(line);
+    const get = (col: string) => {
+      const idx = colIndex.get(col);
+      return idx === undefined ? "" : (fields[idx] ?? "").trim();
+    };
+
+    const company = get("company");
+    if (!company) {
+      errors.push({ line: lineNum, message: "缺少 company" });
+      continue;
+    }
+    if (existing.has(company)) {
+      skipped.push({ company, reason: "公司已存在" });
+      continue;
+    }
+
+    const industry = get("industry");
+    const contactName = get("contactName");
+    const sourceSummary = get("sourceSummary");
+    if (!industry || !contactName || !sourceSummary) {
+      errors.push({ line: lineNum, message: "缺少必填列" });
+      continue;
+    }
+
+    seq++;
+    const id = csvLeadId(ctx.db, seq, company);
+    ctx.db
+      .insert(leads)
+      .values({
+        id,
+        company,
+        industry,
+        status: LEAD_STATUSES[0],
+        ownerUserId: null,
+        contactName,
+        sourceSummary,
+        lastActivity: "CSV 导入",
+        searchTags: get("searchTags"),
+        createdAt: now(),
+      })
+      .run();
+    existing.add(company);
+    imported.push({ id, company });
+  }
+
+  if (imported.length > 0) {
+    rebuildLeadVec(ctx.sqlite);
+  }
+
+  return { ok: true, imported, skipped, errors };
 }
 
 export function leadTimeline(db: AppDb, leadId: string) {

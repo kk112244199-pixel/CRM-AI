@@ -13,8 +13,10 @@ import {
   abortRun,
   advanceStage,
   confirmHandoff,
+  importLeadsFromCsv,
   ingestLead,
   leadTimeline,
+  listLeadRows,
   rejectHandoff,
   usageBreakdown,
   type HarnessCtx,
@@ -335,5 +337,67 @@ describe("ACL / 坏 JSON / 中止", () => {
         ?.lastActivity,
     ).toMatch(/中止/);
     c.close();
+  });
+});
+
+describe("S10 线索筛选与 CSV 导入", () => {
+  const c = ctx();
+  afterAll(() => c.close());
+
+  it("status=新线索 含橙果、无已转化 seed", () => {
+    const rows = listLeadRows(c.db, { status: "新线索" });
+    expect(rows.some((r) => r.company === "橙果素质教育")).toBe(true);
+    expect(rows.every((r) => r.status === "新线索")).toBe(true);
+    expect(rows.some((r) => r.status === "已转化")).toBe(false);
+  });
+
+  it("stage=方案报价 含杭齿与邻里鲜", () => {
+    const rows = listLeadRows(c.db, { stage: "方案报价" });
+    const names = rows.map((r) => r.company);
+    expect(names).toContain("杭齿精密机电");
+    expect(names).toContain("邻里鲜超市");
+  });
+
+  it("stage=丢单 含江东水务物资", () => {
+    const rows = listLeadRows(c.db, { stage: "丢单" });
+    expect(rows.map((r) => r.company)).toContain("江东水务物资");
+  });
+
+  it("sales 导入两行新公司，跳过橙果，不建 account", () => {
+    const before = c.db.select().from(accounts).all().length;
+    const csv = [
+      "company,industry,contactName,sourceSummary,searchTags",
+      "测试导入甲,软件,Sales A,来源A,标签A",
+      "橙果素质教育,教培,林校长,重复,教培",
+      "测试导入乙,制造,Sales B,来源B,",
+    ].join("\n");
+    const result = importLeadsFromCsv(c, { csv, role: "sales" });
+    expect(result.imported.map((r) => r.company)).toEqual([
+      "测试导入甲",
+      "测试导入乙",
+    ]);
+    expect(result.skipped).toEqual([
+      { company: "橙果素质教育", reason: "公司已存在" },
+    ]);
+    expect(c.db.select().from(accounts).all().length).toBe(before);
+    const imported = c.db.select().from(leads).all();
+    const a = imported.find((l) => l.company === "测试导入甲");
+    expect(a?.status).toBe("新线索");
+    expect(a?.ownerUserId).toBeNull();
+    expect(a?.lastActivity).toBe("CSV 导入");
+    expect(
+      c.db.select().from(opportunities).where(eq(opportunities.leadId, a!.id)).get(),
+    ).toBeUndefined();
+  });
+
+  it("viewer 导入 403，库不变", () => {
+    const countBefore = c.db.select().from(leads).all().length;
+    expect(() =>
+      importLeadsFromCsv(c, {
+        csv: "company,industry,contactName,sourceSummary\nX,Y,Z,S",
+        role: "viewer",
+      }),
+    ).toThrow(HarnessError);
+    expect(c.db.select().from(leads).all().length).toBe(countBefore);
   });
 });
