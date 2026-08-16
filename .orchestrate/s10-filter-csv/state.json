@@ -27,21 +27,21 @@
       "name": "s10-api",
       "type": "worker",
       "branch": "orch/s10-filter-csv/s10-api",
-      "startingRef": "main",
+      "startingRef": "orch/s10-filter-csv/s10-spec",
       "dependsOn": [
         "s10-spec"
       ],
       "agentId": null,
       "runId": null,
       "parentAgentId": null,
-      "status": "pending",
+      "status": "running",
       "resultStatus": null,
       "handoffPath": null,
-      "startedAt": null,
+      "startedAt": "2026-08-16T18:51:17.620Z",
       "finishedAt": null,
-      "lastUpdate": "2026-08-16T18:51:10.971Z",
+      "lastUpdate": "2026-08-16T18:51:17.620Z",
       "note": "respawned by self-planner (was error; attempts=1)",
-      "attempts": 1,
+      "attempts": 2,
       "slackTs": null,
       "prNumber": null,
       "failureMode": null,
@@ -159,6 +159,10 @@
     {
       "at": "2026-08-16T18:51:12.085Z",
       "message": "s10-api: respawned by self-planner (was error)"
+    },
+    {
+      "at": "2026-08-16T18:51:13.384Z",
+      "message": "s10-web: respawned by self-planner (was error)"
     }
   ]
 }
