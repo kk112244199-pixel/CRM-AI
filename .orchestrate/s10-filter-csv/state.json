@@ -91,11 +91,11 @@
       "finishedAt": "2026-08-16T18:55:24.482Z",
       "lastUpdate": "2026-08-16T18:55:25.472Z",
       "note": null,
+      "attempts": 1,
       "slackTs": null,
       "prNumber": null,
       "failureMode": null,
-      "verification": "unit-test-verified",
-      "attempts": 1
+      "verification": "unit-test-verified"
     },
     {
       "name": "s10-docs",
@@ -113,37 +113,37 @@
       "handoffPath": "handoffs/s10-docs.md",
       "startedAt": "2026-08-16T18:55:25.970Z",
       "finishedAt": "2026-08-16T18:57:47.199Z",
-      "lastUpdate": "2026-08-16T18:57:47.199Z",
+      "lastUpdate": "2026-08-16T18:57:50.223Z",
       "note": null,
+      "attempts": 1,
       "slackTs": null,
       "prNumber": 1,
       "failureMode": null,
-      "verification": null,
-      "attempts": 1
+      "verification": "unit-test-verified"
     },
     {
       "name": "verify-s10",
       "type": "verifier",
-      "branch": "orch/s10-filter-csv/verify-s10",
+      "branch": "orch/s10-filter-csv/s10-docs",
       "startingRef": "orch/s10-filter-csv/s10-docs",
       "dependsOn": [
         "s10-docs"
       ],
-      "agentId": null,
-      "runId": null,
-      "parentAgentId": null,
-      "status": "running",
-      "resultStatus": null,
-      "handoffPath": null,
+      "agentId": "bc-be87a5da-531d-482e-aa2b-94782398f826",
+      "runId": "run-5e826de0-2af7-4bc8-84cb-18fcae41f69d",
+      "parentAgentId": "bc-26f03584-285d-4cb3-b6fe-1c88066a43a2",
+      "status": "handed-off",
+      "resultStatus": "finished",
+      "handoffPath": "handoffs/verify-s10.md",
       "startedAt": "2026-08-16T18:57:48.592Z",
-      "finishedAt": null,
-      "lastUpdate": "2026-08-16T18:57:48.592Z",
+      "finishedAt": "2026-08-16T19:00:31.579Z",
+      "lastUpdate": "2026-08-16T19:00:31.579Z",
       "note": null,
+      "attempts": 1,
       "slackTs": null,
       "prNumber": null,
       "failureMode": null,
-      "verification": null,
-      "attempts": 1
+      "verification": null
     }
   ],
   "attention": [
@@ -178,6 +178,10 @@
     {
       "at": "2026-08-16T18:55:25.472Z",
       "message": "merge-s10: verification self-reported (unit-test-verified)"
+    },
+    {
+      "at": "2026-08-16T18:57:50.224Z",
+      "message": "s10-docs: verification self-reported (unit-test-verified)"
     }
   ]
 }
