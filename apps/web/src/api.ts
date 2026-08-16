@@ -1,4 +1,17 @@
-import type { Lead, LeadCard, OppStage, PendingItem, Role, Usage } from "./types";
+import type {
+  ImportLeadsResult,
+  Lead,
+  LeadCard,
+  OppStage,
+  PendingItem,
+  Role,
+  Usage,
+} from "./types";
+
+export type LeadsQuery = {
+  status?: string;
+  stage?: OppStage;
+};
 
 const ROLE_KEY = "hengce-role";
 
@@ -62,8 +75,20 @@ export function getHealth(role: Role) {
   );
 }
 
-export function getLeads(role: Role) {
-  return request<{ leads: Lead[] }>("/api/leads", role);
+export function getLeads(role: Role, query?: LeadsQuery) {
+  const params = new URLSearchParams();
+  if (query?.status) params.set("status", query.status);
+  if (query?.stage) params.set("stage", query.stage);
+  const qs = params.toString();
+  const path = qs ? `/api/leads?${qs}` : "/api/leads";
+  return request<{ leads: Lead[] }>(path, role);
+}
+
+export function importLeadsCsv(role: Role, csv: string) {
+  return request<ImportLeadsResult>("/api/leads/import", role, {
+    method: "POST",
+    body: JSON.stringify({ csv }),
+  });
 }
 
 export function getLead(role: Role, id: string) {
