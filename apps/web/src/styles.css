@@ -286,6 +286,35 @@ select {
   border-color: var(--ink);
 }
 
+.import-csv {
+  position: relative;
+  display: inline-flex;
+  cursor: pointer;
+}
+
+.import-csv input[type="file"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.import-csv span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 14px;
+}
+
+.import-csv input:disabled + span {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .table-wrap {
   overflow-x: auto;
   background: var(--paper);

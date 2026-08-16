@@ -10,6 +10,7 @@ import {
   getPending,
   getSimilar,
   getUsage,
+  importLeadsCsv,
   ingestLead,
   readRole,
   rejectHandoff,
@@ -40,6 +41,25 @@ type AskState = {
 };
 
 type ListTab = "all" | "new" | "open" | "wait";
+
+const STAGE_CHIPS: OppStage[] = [
+  "需求确认",
+  "方案报价",
+  "谈判",
+  "赢单",
+  "丢单",
+];
+
+function leadsQueryForTab(tab: ListTab, stage: OppStage | null): {
+  status?: string;
+  stage?: OppStage;
+} {
+  const query: { status?: string; stage?: OppStage } = {};
+  if (tab === "new") query.status = "新线索";
+  else if (tab === "open") query.status = "已转化";
+  if (stage) query.stage = stage;
+  return query;
+}
 
 /** 主画面四站漏斗。展示名固定，不改调度顺序。转化站对应 pipeline（商机）。 */
 const FUNNEL: { agentId: AgentId; title: string; hint: string }[] = [
@@ -271,9 +291,8 @@ export function App() {
 
       {page === "list" && (
         <ListPage
-          leads={leads}
+          role={role}
           pendingIds={pendingIds}
-          booting={booting}
           locked={locked}
           cardsStage={(l) => stageLabel(l, l.id === card?.lead.id ? card : null)}
           similarMsg={similarMsg}
@@ -290,6 +309,17 @@ export function App() {
                 );
               },
               { busy: "正在对照相似客户" },
+            )
+          }
+          onImportCsv={(csv) =>
+            run(
+              async () => {
+                const res = await importLeadsCsv(role, csv);
+                setNotice(
+                  `导入 ${res.imported.length} 条，跳过 ${res.skipped.length} 条`,
+                );
+              },
+              { busy: "正在导入 CSV" },
             )
           }
         />
@@ -445,31 +475,59 @@ export function App() {
 }
 
 function ListPage({
-  leads,
+  role,
   pendingIds,
-  booting,
   locked,
   cardsStage,
   similarMsg,
   onOpen,
   onSimilar,
+  onImportCsv,
 }: {
-  leads: Lead[];
+  role: Role;
   pendingIds: Set<string>;
-  booting: boolean;
   locked: boolean;
   cardsStage: (l: Lead) => string;
   similarMsg: string;
   onOpen: (id: string) => void;
   onSimilar: (company: string) => void;
+  onImportCsv: (csv: string) => Promise<void>;
 }) {
   const [q, setQ] = useState("");
   const [tab, setTab] = useState<ListTab>("all");
+  const [stage, setStage] = useState<OppStage | null>(null);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [booting, setBooting] = useState(true);
+  const canImport = role === "sales" || role === "manager";
+
+  const fetchList = useCallback(async () => {
+    setBooting(true);
+    try {
+      const res = await getLeads(role, leadsQueryForTab(tab, stage));
+      setLeads(res.leads);
+    } catch {
+      setLeads([]);
+    } finally {
+      setBooting(false);
+    }
+  }, [role, tab, stage]);
+
+  useEffect(() => {
+    void fetchList();
+  }, [fetchList]);
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    const csv = await file.text();
+    await onImportCsv(csv);
+    await fetchList();
+  };
+
   const newCount = leads.filter((l) => l.status === "新线索").length;
   const waitCount = leads.filter((l) => pendingIds.has(l.id)).length;
   const rows = leads.filter((l) => {
-    if (tab === "new" && l.status !== "新线索") return false;
-    if (tab === "open" && l.status === "新线索") return false;
     if (tab === "wait" && !pendingIds.has(l.id)) return false;
     const needle = q.trim();
     if (!needle) return true;
@@ -507,6 +565,19 @@ function ListPage({
             </button>
           ))}
         </div>
+        <div className="filters" role="group" aria-label="商机阶段">
+          {STAGE_CHIPS.map((st) => (
+            <button
+              key={st}
+              type="button"
+              className={stage === st ? "filter on" : "filter"}
+              aria-pressed={stage === st}
+              onClick={() => setStage(stage === st ? null : st)}
+            >
+              {st}
+            </button>
+          ))}
+        </div>
         <input
           className="search"
           value={q}
@@ -514,6 +585,17 @@ function ListPage({
           placeholder="按公司或行业筛选"
           aria-label="按公司或行业筛选"
         />
+        {canImport ? (
+          <label className="import-csv">
+            <input
+              type="file"
+              accept=".csv,text/csv"
+              disabled={locked}
+              onChange={(e) => void handleImportFile(e)}
+            />
+            <span className="ghost">导入 CSV</span>
+          </label>
+        ) : null}
       </div>
       {similarMsg ? <p className="flash flash-busy">{similarMsg}</p> : null}
       {booting && leads.length === 0 ? (

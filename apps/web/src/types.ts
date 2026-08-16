@@ -93,3 +93,10 @@ export type PendingItem = {
   hitlKind: string | null;
   company: string;
 };
+
+export type ImportLeadsResult = {
+  ok: boolean;
+  imported: { id: string; company: string }[];
+  skipped: { company: string; reason: string }[];
+  errors: { line: number; message: string }[];
+};

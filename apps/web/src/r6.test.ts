@@ -41,6 +41,12 @@ describe("五屏与时间线文案", () => {
     expect(app).toMatch(/商机/);
     expect(app).toMatch(/跟进/);
     expect(app).toMatch(/交卷时间线（主）/);
+    expect(app).toMatch(/需求确认/);
+    expect(app).toMatch(/方案报价/);
+    expect(app).toMatch(/谈判/);
+    expect(app).toMatch(/赢单/);
+    expect(app).toMatch(/丢单/);
+    expect(app).toMatch(/导入 CSV/);
     expect(app).not.toMatch(/\p{Extended_Pictographic}/u);
   });
 
@@ -48,6 +54,9 @@ describe("五屏与时间线文案", () => {
     const api = readFileSync(join(srcDir, "api.ts"), "utf8");
     expect(api).toMatch(/x-hengce-role/);
     expect(api).toMatch(/\/api\/leads\/ingest/);
+    expect(api).toMatch(/\/api\/leads\/import/);
+    expect(api).toMatch(/URLSearchParams/);
+    expect(api).toMatch(/status/);
     expect(api).toMatch(/\/api\/handoffs\//);
     expect(api).toMatch(/\/api\/usage/);
     expect(api).not.toMatch(/CURSOR_API_KEY/);
