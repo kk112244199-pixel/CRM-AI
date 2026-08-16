@@ -1,0 +1,150 @@
+{
+  "$schema": "../../.cursor/skills/orchestrate/schemas/plan.schema.json",
+  "goal": "给衡策销管平台加线索列表筛选（按阶段/未转化）与 CSV 导入，含测试与契约文件",
+  "summary": "S10: lead list filter by stage/unconverted plus CSV import, with tests and S10 contract",
+  "rootSlug": "s10-filter-csv",
+  "baseBranch": "main",
+  "prBase": "main",
+  "repoUrl": "https://github.com/kk112244199-pixel/CRM-AI",
+  "selfAgentId": "bc-26f03584-285d-4cb3-b6fe-1c88066a43a2",
+  "acceptanceCriteria": [
+    "GET /api/leads accepts status=新线索|已转化 and stage=需求确认|方案报价|谈判|赢单|丢单; AND semantics; invalid enum returns 400; no params still returns all seeded leads with oppStage",
+    "POST /api/leads/import creates 新线索 rows from CSV, skips duplicate company names (including the eight seeds), does not run ingest or convert, viewer 403, then rebuildLeadVec",
+    "apps/web list page can filter by 未转化 and by each 商机阶段 against the API, and sales/manager can import a CSV from that page; viewer cannot import",
+    "Targeted tests pass (root npm test plus npm --prefix apps/web test); docs/checklists/S10.md and docs/contracts/S10.md exist; skill-timeline marks S10 done",
+    "No apps/web-demo fetch, no funnel/HITL/8-name changes, no emoji, no Redis/MQ/GraphRAG, no plan.json in CRM runtime"
+  ],
+  "tasks": [
+    {
+      "name": "s10-spec",
+      "type": "worker",
+      "scopedGoal": "Commit docs/s10-brief.md as the locked S10 implementation brief for descendant workers. Do not implement API or UI. Copy the task brief into that file (markdown, no emoji). Do not re-discover the repo beyond confirming the cited paths still exist.",
+      "brief": "Root planner already discovered the repo. Write exactly one file: docs/s10-brief.md.\n\nCurrent state (do not treat as work to redo):\n- GET /api/leads in apps/api/src/router.ts calls listLeadRows(ctx.db) with no query params.\n- listLeadRows lives in packages/harness/src/scheduler.ts and already attaches oppStage.\n- apps/web ListPage (apps/web/src/App.tsx) already has client-only tabs 全部/未转化/已转化/待确认 plus text search; getLeads(role) fetches the full list once.\n- No CSV import endpoint or UI exists.\n- Hard context is docs/contracts/S9.md plus M0–M6. Engineering rule: tests must pass; no emoji; 橙果素质教育 stays 未转化; eight company names unchanged.\n\nLock these semantics in docs/s10-brief.md:\n\n## Filter\nGET /api/leads?status=&stage=\n- status in LEAD_STATUSES: 新线索, 已转化. Omit = no status filter.\n- stage in OPP_STAGES: 需求确认, 方案报价, 谈判, 赢单, 丢单. Omit = no stage filter. Stage matches opportunities.stage via oppStage. Unconverted leads have oppStage null so they never match a stage filter.\n- Combine with AND. status=新线索&stage=方案报价 returns [].\n- Unknown status or stage -> 400 { ok:false, error } (Chinese error ok).\n- Response shape unchanged: { leads: LeadRow[] } including oppStage.\n- No params: same as today (all leads).\nImplement listLeadRows(db, { status?, stage? }) in packages/harness and keep HTTP thin. Export from packages/harness/src/index.ts if needed.\nSeed lock: status=新线索 includes 橙果素质教育; stage=方案报价 includes 杭齿精密机电 and 邻里鲜超市; stage=丢单 includes 江东水务物资.\n\n## CSV import\nPOST /api/leads/import\n- Body JSON { csv: string } (UTF-8, optional BOM). Do not add a CSV npm dependency.\n- Required header: company,industry,contactName,sourceSummary. Optional column searchTags.\n- Each valid row inserts a lead: status=新线索, ownerUserId null, lastActivity 'CSV 导入', no account/contact/opportunity/activity, do NOT call ingestLead or any Agent runner.\n- Duplicate company (exact string match against existing leads.company, including the eight seeds) -> skip with reason, do not error the whole request.\n- Empty/missing company -> that row in errors; continue others.\n- viewer -> 403, db unchanged. sales and manager allowed.\n- After any successful insert, call rebuildLeadVec(sqlite) so S9 similar search stays consistent.\n- Response: { ok, imported: [{ id, company }], skipped: [{ company, reason }], errors: [{ line, message }] }.\n- New ids like lead-csv-<n> or lead-csv-<slug>-<n>; do not reuse seed ids.\n- CORS stays GET,POST,OPTIONS.\n\n## Web\n- Keep existing tabs. Add stage chips for the five 商机阶段 (reuse .filter buttons). Selecting 未转化 should request status=新线索; selecting a stage should request stage=...; 全部 with no stage omits params. 待确认 may remain client-side on pendingIds.\n- Add CSV import on the list toolbar: file input, sales/manager only; viewer hides control or shows 403. Call POST /api/leads/import then refresh the list.\n- Extend apps/web/src/api.ts getLeads(role, query?) and add importLeadsCsv(role, csv). Keep x-hengce-role. No CURSOR_API_KEY / @cursor/sdk in apps/web.\n- Do not change the funnel rail, HITL gates, or apps/web-demo (still no fetch).\n\n## Tests and docs (later tasks, but specify here)\n- apps/api/src/router.test.ts: filter cases + import cases + viewer 403.\n- packages/harness tests for listLeadRows filters and import helper.\n- apps/web/src/r6.test.ts: assert list UI copy for stage chips and CSV import, and /api/leads/import in api.ts.\n- Final docs: docs/checklists/S10.md and docs/contracts/S10.md; update docs/skill-timeline.md S10 to done; point previous contracts' 下一刀 away from 'S10 未做'.\n\nForbidden: Redis, MQ, GraphRAG, web-demo fetch, funnel/order/gate changes, English Discovery/Demo stages, emoji, putting .orchestrate plan.json into CRM runtime, using /orchestrate to schedule lead-intake.",
+      "pathsAllowed": ["docs/s10-brief.md"],
+      "pathsForbidden": ["apps/**", "packages/**", "runtime/**", ".cursor/**"],
+      "acceptance": [
+        "docs/s10-brief.md exists and states GET /api/leads query params, POST /api/leads/import CSV columns, ACL, seed locks, and forbidden items",
+        "No application source files changed"
+      ],
+      "verify": "## Automated\n- Confirm docs/s10-brief.md is present and mentions status=新线索, stage=方案报价, POST /api/leads/import, viewer 403, rebuildLeadVec.\n\n## Gotchas\n- This task is reference material only; do not implement the API.",
+      "model": "composer-2-fast"
+    },
+    {
+      "name": "s10-api",
+      "type": "worker",
+      "dependsOn": ["s10-spec"],
+      "scopedGoal": "Implement S10 lead list query filters and CSV import in harness + HTTP, with tests. Follow docs/s10-brief.md from the upstream spec handoff (the file is on the spec branch; the semantics are in your brief and the pasted handoff). Do not change apps/web or apps/web-demo.",
+      "brief": "Implement the backend half of S10 against main, using the locked semantics in the s10-spec brief/handoff.\n\nTouch:\n- packages/harness/src/scheduler.ts: listLeadRows(db, filters?) AND a new importLeadsFromCsv(ctx, { csv, role }) (or equivalent). Viewer throws 403 via existing HarnessError pattern. After inserts, rebuildLeadVec(ctx.sqlite).\n- packages/harness/src/index.ts: export the new function(s).\n- packages/harness tests (new file or scheduler.test.ts describe): filter seed locks; import two new companies; skip 橙果素质教育; viewer 403; no accounts created.\n- apps/api/src/router.ts: parse status/stage query on GET /api/leads; POST /api/leads/import before the generic GET /api/leads/:id matcher. Import must not be captured as a lead id.\n- apps/api/src/router.test.ts: HTTP cases for filters and import.\n\nRoute order: POST /api/leads/import must be registered before /^\\/api\\/leads\\/([^/]+)$/.\n\nKeep ingest/stage/abort/HITL behavior unchanged. Do not run Agent runners on import. No emoji. Chinese comments only on ACL/gate/why.\n\nRun: npm test (root vitest, excludes golden). Do not start a follow-up UI task.",
+      "pathsAllowed": [
+        "packages/harness/src/**",
+        "apps/api/src/**"
+      ],
+      "pathsForbidden": [
+        "apps/web/**",
+        "apps/web-demo/**",
+        "docs/**",
+        "runtime/**"
+      ],
+      "acceptance": [
+        "GET /api/leads?status=新线索 returns 橙果素质教育 and no 已转化 seed",
+        "GET /api/leads?stage=方案报价 returns 杭齿精密机电 and 邻里鲜超市",
+        "GET /api/leads?stage=not-a-stage returns 400",
+        "POST /api/leads/import as viewer is 403 and inserts nothing",
+        "POST /api/leads/import as sales inserts 新线索 rows, skips duplicate 橙果素质教育, does not create account/opportunity, does not call ingest",
+        "npm test passes (excluding golden)"
+      ],
+      "verify": "## Setup\n- npm install at repo root if needed.\n\n## Automated\n- npm test\n- Optionally a focused vitest on apps/api/src/router.test.ts and the new harness import/filter tests.\n\n## Gotchas\n- Register /api/leads/import before /api/leads/:id.\n- Import must not start the four CRM agents.",
+      "model": "gpt-5.5-high-fast"
+    },
+    {
+      "name": "s10-web",
+      "type": "worker",
+      "dependsOn": ["s10-spec"],
+      "scopedGoal": "Wire apps/web clue list to GET /api/leads status/stage query params, add 商机阶段 chips, and add CSV import on the list page. Follow the s10-spec brief. Do not change apps/api, packages, or apps/web-demo.",
+      "brief": "Frontend half of S10. Backend may land on a sibling branch; code against the locked HTTP contract in the spec handoff.\n\nTouch only apps/web:\n- src/api.ts: getLeads(role, { status?, stage? }) builds query string; importLeadsCsv(role, csv) POSTs { csv } to /api/leads/import. Keep x-hengce-role and content-type application/json.\n- src/App.tsx ListPage: keep 全部/未转化/已转化/待确认. Add stage chips 需求确认/方案报价/谈判/赢单/丢单 (can clear). When tab=new, fetch status=新线索; tab=open, status=已转化; a stage chip adds stage=; tab=all with no stage fetches unfiltered. 待确认 can stay client filter on pendingIds after an unfiltered or converted fetch.\n- CSV: toolbar file input + 导入 CSV for sales/manager; hide or disable for viewer. Read file as text, POST, show imported/skipped counts in the existing notice flash, reload leads. No emoji.\n- src/types.ts only if the import response type is needed.\n- src/r6.test.ts: assert App has stage chip labels and 导入 CSV; api.ts has /api/leads/import and query-param leads fetch; still no CURSOR_API_KEY / @cursor/sdk / emoji.\n- styles.css: reuse .filter; no purple gradients, no funnel restyle.\n\nDo not change funnel FUNNEL constant, HITL, or detail page gates. Default list still shows 橙果 as 未转化.\n\nRun: npm --prefix apps/web test",
+      "pathsAllowed": ["apps/web/**"],
+      "pathsForbidden": [
+        "apps/web-demo/**",
+        "apps/api/**",
+        "packages/**",
+        "docs/**",
+        "runtime/**"
+      ],
+      "acceptance": [
+        "List page has stage chips for 需求确认 方案报价 谈判 赢单 丢单 and still has 未转化",
+        "getLeads passes status/stage as query params; importLeadsCsv posts /api/leads/import",
+        "Viewer does not get a working import control",
+        "npm --prefix apps/web test passes",
+        "apps/web-demo is untouched"
+      ],
+      "verify": "## Automated\n- npm --prefix apps/web test\n- grep apps/web/src for /api/leads/import and status= or URLSearchParams\n- Confirm apps/web-demo has no new fetch\n\n## Manual if env allows\n- Open list, click 未转化, confirm only 新线索 rows; click 方案报价, confirm 杭齿/邻里鲜.\n\n## Gotchas\n- Do not restyle the funnel rail.",
+      "model": "gpt-5.5-high-fast"
+    },
+    {
+      "name": "merge-s10",
+      "type": "worker",
+      "dependsOn": ["s10-spec", "s10-api", "s10-web"],
+      "scopedGoal": "Merge the s10-spec, s10-api, and s10-web branches (in that dependsOn order) onto orch/s10-filter-csv/s10. Resolve conflicts conservatively: keep both API and web changes; never drop tests. After merge, run npm test and npm --prefix apps/web test and fix only merge-breakage. Push orch/s10-filter-csv/s10 and report that branch in the handoff.",
+      "brief": "This is a merge worker. Source branches are in the upstream handoffs' ## Branch lines (authoritative over the orch/ placeholder). Merge them into orch/s10-filter-csv/s10 one at a time. If a source branch name in git differs from the placeholder, use the handoff ## Branch.\n\nAfter merge:\n- npm test\n- npm --prefix apps/web test\nIf tests fail due to merge, fix the conflict only — do not add new features.\nDo not open a PR. Do not edit apps/web-demo.",
+      "pathsAllowed": [
+        "apps/api/**",
+        "apps/web/**",
+        "packages/harness/**",
+        "docs/s10-brief.md"
+      ],
+      "pathsForbidden": ["apps/web-demo/**", ".cursor/**"],
+      "acceptance": [
+        "Branch orch/s10-filter-csv/s10 contains spec + API filters/import + web chips/import",
+        "npm test passes",
+        "npm --prefix apps/web test passes",
+        "No web-demo changes"
+      ],
+      "verify": "## Automated\n- npm test\n- npm --prefix apps/web test\n- Confirm both GET query filters and POST /api/leads/import exist on this branch together with the web client.",
+      "model": "gpt-5.5-high-fast"
+    },
+    {
+      "name": "s10-docs",
+      "type": "worker",
+      "dependsOn": ["merge-s10"],
+      "startingRef": "orch/s10-filter-csv/s10",
+      "openPR": true,
+      "scopedGoal": "On the merged S10 branch, write docs/checklists/S10.md and docs/contracts/S10.md, mark S10 done in docs/skill-timeline.md and docs/cursor-session-handoff.md, and retarget previous contracts' 下一刀 so they no longer say S10 is undone. Do not change runtime behavior except doc-only files. Open a draft PR against main.",
+      "brief": "Start from orch/s10-filter-csv/s10 (merge output). If that ref is missing, use the merge-s10 handoff ## Branch.\n\nWrite:\n- docs/checklists/S10.md in the style of docs/checklists/S9.md: what shipped, commands (npm test, npm --prefix apps/web test), pass/fail, no emoji.\n- docs/contracts/S10.md in the style of docs/contracts/S9.md: HTTP additions, filter/import semantics, ACL, seed locks, 禁做, 已交付. Subsequent work treats S10 as hard context.\n- docs/skill-timeline.md: S10 status 已完成; 当前硬上下文 becomes contracts/S10.md; the S10 copy-block section becomes historical.\n- docs/cursor-session-handoff.md: S10 done; next-step copy no longer tells people to /orchestrate S10 as the current gap.\n- docs/PRD.md and docs/contracts/S9.md (and other '下一刀 S10 未做' pointers if present): say S10 delivered.\n- docs/engineering-standards.md only if it still lists S10 as future.\n\nDo not change apps/ or packages/ unless a doc example is wrong — prefer docs-only. No emoji. Open a draft PR against main summarizing filter + CSV + contracts. Keep .orchestrate/ out of the PR diff.",
+      "pathsAllowed": [
+        "docs/**",
+        "README.md"
+      ],
+      "pathsForbidden": [
+        "apps/**",
+        "packages/**",
+        "runtime/**",
+        ".cursor/**",
+        ".orchestrate/**"
+      ],
+      "acceptance": [
+        "docs/checklists/S10.md and docs/contracts/S10.md exist and match the implemented HTTP",
+        "docs/skill-timeline.md marks S10 completed and names contracts/S10.md as current hard context",
+        "Draft PR opened against main with the merged feature + docs",
+        "No apps/web-demo changes"
+      ],
+      "verify": "## Automated\n- test -f docs/contracts/S10.md && test -f docs/checklists/S10.md\n- rg 'S10' docs/skill-timeline.md | head\n- npm test && npm --prefix apps/web test on this branch\n\n## Gotchas\n- Contract must not silently change M0–S9 gates.",
+      "model": "composer-2-fast"
+    },
+    {
+      "name": "verify-s10",
+      "type": "verifier",
+      "verifies": "s10-docs",
+      "scopedGoal": "Verify S10 on the s10-docs branch: filters, CSV import, tests, and contract files. Run the code; do not trust the diff.",
+      "acceptance": [
+        "npm test passes on the target branch",
+        "npm --prefix apps/web test passes",
+        "GET /api/leads?status=新线索 and ?stage=方案报价 behave as specified (router tests or a live scripted handleApi call)",
+        "POST /api/leads/import viewer 403 and sales insert-as-新线索 are covered by tests",
+        "docs/contracts/S10.md and docs/checklists/S10.md exist",
+        "apps/web-demo has no new fetch"
+      ],
+      "verify": "## Setup\n- npm install if needed. Use bootstrapMemoryDb / handleApi for HTTP checks if you do not start the server.\n\n## Automated\n- npm test\n- npm --prefix apps/web test\n- rg fetch apps/web-demo/src must stay clean of API clients\n- Confirm docs/contracts/S10.md documents GET query params and POST /api/leads/import\n\n## Manual if env allows\n- npm --prefix apps/api start and hit the filter/import endpoints.\n\n## Gotchas\n- Golden tests may skip without DASHSCOPE_API_KEY / CURSOR_API_KEY; that is allowed. Do not treat skipped golden as failure.\n- verifier-blocked if you cannot run tests; do not claim unit-test-verified without running them.",
+      "model": "claude-opus-4-8"
+    }
+  ]
+}
