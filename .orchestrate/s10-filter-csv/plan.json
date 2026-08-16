@@ -33,6 +33,7 @@
       "name": "s10-api",
       "type": "worker",
       "dependsOn": ["s10-spec"],
+      "startingRef": "orch/s10-filter-csv/s10-spec",
       "scopedGoal": "Implement S10 lead list query filters and CSV import in harness + HTTP, with tests. Follow docs/s10-brief.md from the upstream spec handoff (the file is on the spec branch; the semantics are in your brief and the pasted handoff). Do not change apps/web or apps/web-demo.",
       "brief": "Implement the backend half of S10 against main, using the locked semantics in the s10-spec brief/handoff.\n\nTouch:\n- packages/harness/src/scheduler.ts: listLeadRows(db, filters?) AND a new importLeadsFromCsv(ctx, { csv, role }) (or equivalent). Viewer throws 403 via existing HarnessError pattern. After inserts, rebuildLeadVec(ctx.sqlite).\n- packages/harness/src/index.ts: export the new function(s).\n- packages/harness tests (new file or scheduler.test.ts describe): filter seed locks; import two new companies; skip 橙果素质教育; viewer 403; no accounts created.\n- apps/api/src/router.ts: parse status/stage query on GET /api/leads; POST /api/leads/import before the generic GET /api/leads/:id matcher. Import must not be captured as a lead id.\n- apps/api/src/router.test.ts: HTTP cases for filters and import.\n\nRoute order: POST /api/leads/import must be registered before /^\\/api\\/leads\\/([^/]+)$/.\n\nKeep ingest/stage/abort/HITL behavior unchanged. Do not run Agent runners on import. No emoji. Chinese comments only on ACL/gate/why.\n\nRun: npm test (root vitest, excludes golden). Do not start a follow-up UI task.",
       "pathsAllowed": [
@@ -54,12 +55,13 @@
         "npm test passes (excluding golden)"
       ],
       "verify": "## Setup\n- npm install at repo root if needed.\n\n## Automated\n- npm test\n- Optionally a focused vitest on apps/api/src/router.test.ts and the new harness import/filter tests.\n\n## Gotchas\n- Register /api/leads/import before /api/leads/:id.\n- Import must not start the four CRM agents.",
-      "model": "gpt-5.5-high-fast"
+      "model": "composer-2-fast"
     },
     {
       "name": "s10-web",
       "type": "worker",
       "dependsOn": ["s10-spec"],
+      "startingRef": "orch/s10-filter-csv/s10-spec",
       "scopedGoal": "Wire apps/web clue list to GET /api/leads status/stage query params, add 商机阶段 chips, and add CSV import on the list page. Follow the s10-spec brief. Do not change apps/api, packages, or apps/web-demo.",
       "brief": "Frontend half of S10. Backend may land on a sibling branch; code against the locked HTTP contract in the spec handoff.\n\nTouch only apps/web:\n- src/api.ts: getLeads(role, { status?, stage? }) builds query string; importLeadsCsv(role, csv) POSTs { csv } to /api/leads/import. Keep x-hengce-role and content-type application/json.\n- src/App.tsx ListPage: keep 全部/未转化/已转化/待确认. Add stage chips 需求确认/方案报价/谈判/赢单/丢单 (can clear). When tab=new, fetch status=新线索; tab=open, status=已转化; a stage chip adds stage=; tab=all with no stage fetches unfiltered. 待确认 can stay client filter on pendingIds after an unfiltered or converted fetch.\n- CSV: toolbar file input + 导入 CSV for sales/manager; hide or disable for viewer. Read file as text, POST, show imported/skipped counts in the existing notice flash, reload leads. No emoji.\n- src/types.ts only if the import response type is needed.\n- src/r6.test.ts: assert App has stage chip labels and 导入 CSV; api.ts has /api/leads/import and query-param leads fetch; still no CURSOR_API_KEY / @cursor/sdk / emoji.\n- styles.css: reuse .filter; no purple gradients, no funnel restyle.\n\nDo not change funnel FUNNEL constant, HITL, or detail page gates. Default list still shows 橙果 as 未转化.\n\nRun: npm --prefix apps/web test",
       "pathsAllowed": ["apps/web/**"],
@@ -78,7 +80,7 @@
         "apps/web-demo is untouched"
       ],
       "verify": "## Automated\n- npm --prefix apps/web test\n- grep apps/web/src for /api/leads/import and status= or URLSearchParams\n- Confirm apps/web-demo has no new fetch\n\n## Manual if env allows\n- Open list, click 未转化, confirm only 新线索 rows; click 方案报价, confirm 杭齿/邻里鲜.\n\n## Gotchas\n- Do not restyle the funnel rail.",
-      "model": "gpt-5.5-high-fast"
+      "model": "composer-2-fast"
     },
     {
       "name": "merge-s10",
@@ -100,7 +102,7 @@
         "No web-demo changes"
       ],
       "verify": "## Automated\n- npm test\n- npm --prefix apps/web test\n- Confirm both GET query filters and POST /api/leads/import exist on this branch together with the web client.",
-      "model": "gpt-5.5-high-fast"
+      "model": "composer-2-fast"
     },
     {
       "name": "s10-docs",
