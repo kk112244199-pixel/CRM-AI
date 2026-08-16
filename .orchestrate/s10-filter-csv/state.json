@@ -89,12 +89,12 @@
       "handoffPath": "handoffs/merge-s10.md",
       "startedAt": "2026-08-16T18:54:33.108Z",
       "finishedAt": "2026-08-16T18:55:24.482Z",
-      "lastUpdate": "2026-08-16T18:55:24.482Z",
+      "lastUpdate": "2026-08-16T18:55:25.472Z",
       "note": null,
       "slackTs": null,
       "prNumber": null,
       "failureMode": null,
-      "verification": null,
+      "verification": "unit-test-verified",
       "attempts": 1
     },
     {
@@ -108,17 +108,18 @@
       "agentId": null,
       "runId": null,
       "parentAgentId": null,
-      "status": "pending",
+      "status": "running",
       "resultStatus": null,
       "handoffPath": null,
-      "startedAt": null,
+      "startedAt": "2026-08-16T18:55:25.970Z",
       "finishedAt": null,
-      "lastUpdate": null,
+      "lastUpdate": "2026-08-16T18:55:25.970Z",
       "note": null,
       "slackTs": null,
       "prNumber": null,
       "failureMode": null,
-      "verification": null
+      "verification": null,
+      "attempts": 1
     },
     {
       "name": "verify-s10",
@@ -172,6 +173,10 @@
     {
       "at": "2026-08-16T18:54:25.977Z",
       "message": "s10-api: verification self-reported (unit-test-verified)"
+    },
+    {
+      "at": "2026-08-16T18:55:25.472Z",
+      "message": "merge-s10: verification self-reported (unit-test-verified)"
     }
   ]
 }
