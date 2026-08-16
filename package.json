@@ -1,0 +1,30 @@
+{
+  "name": "hengce",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/api",
+    "packages/domain",
+    "packages/harness"
+  ],
+  "scripts": {
+    "test": "vitest run --exclude packages/harness/src/golden.test.ts",
+    "test:golden": "vitest run packages/harness/src/golden.test.ts",
+    "eval:report": "tsx scripts/eval-report.ts",
+    "db:migrate": "tsx packages/domain/src/cli-migrate.ts",
+    "db:seed": "tsx packages/domain/src/cli-seed.ts"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^22.15.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.0"
+  },
+  "dependencies": {
+    "@cursor/sdk": "^1.0.28",
+    "better-sqlite3": "^13.0.3",
+    "drizzle-orm": "^0.44.4",
+    "sqlite-vec": "^0.1.9"
+  }
+}

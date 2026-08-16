@@ -1,0 +1,131 @@
+:root {
+  font-family: sans-serif;
+  font-size: 14px;
+  color: #111;
+  background: #fff;
+}
+
+body {
+  margin: 0;
+}
+
+button,
+select,
+textarea,
+input {
+  font: inherit;
+}
+
+a {
+  color: inherit;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.top {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  border-bottom: 1px solid #111;
+}
+
+.top strong {
+  margin-right: 8px;
+}
+
+nav button {
+  margin-right: 6px;
+}
+
+.top-right {
+  margin-left: auto;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: calc(100vh - 48px);
+}
+
+.side {
+  border-right: 1px solid #111;
+  padding: 12px;
+}
+
+.main {
+  padding: 12px;
+}
+
+.lead-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  margin-bottom: 6px;
+  padding: 6px;
+  background: #fff;
+  border: 1px solid #999;
+  cursor: pointer;
+}
+
+.lead-btn.active {
+  outline: 2px solid #111;
+}
+
+.split {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 16px;
+}
+
+.card,
+.item {
+  border: 1px solid #111;
+  padding: 8px;
+  margin-bottom: 8px;
+}
+
+.muted {
+  color: #444;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+textarea {
+  width: 100%;
+  min-height: 72px;
+  box-sizing: border-box;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th,
+td {
+  border: 1px solid #111;
+  padding: 4px 8px;
+  text-align: left;
+}
+
+.banner {
+  border: 1px dashed #111;
+  padding: 8px;
+  margin-bottom: 12px;
+}
+
+.item.pending {
+  outline: 2px solid #111;
+}

@@ -1,0 +1,12 @@
+{
+  "name": "@hengce/api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/server.ts"
+  },
+  "dependencies": {
+    "@hengce/domain": "*",
+    "@hengce/harness": "*"
+  }
+}

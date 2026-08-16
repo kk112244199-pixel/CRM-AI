@@ -1,0 +1,54 @@
+name: hengce
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.api
+    environment:
+      PORT: "3001"
+      HOST: "0.0.0.0"
+      HENGCE_DB: /data/hengce.db
+      HENGCE_RUNNER: ${HENGCE_RUNNER:-scripted}
+      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY:-}
+      HENGCE_QWEN_MODEL: ${HENGCE_QWEN_MODEL:-qwen3.7-flash-2026-07-15}
+      HENGCE_QWEN_BASE_URL: ${HENGCE_QWEN_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}
+      CURSOR_API_KEY: ${CURSOR_API_KEY:-}
+    volumes:
+      - hengce-data:/data
+    expose:
+      - "3001"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3001/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+
+  web:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.web
+    expose:
+      - "80"
+
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      api:
+        condition: service_healthy
+      web:
+        condition: service_started
+
+volumes:
+  hengce-data:

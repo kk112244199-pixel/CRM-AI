@@ -1,0 +1,10 @@
+node_modules/
+dist/
+data/*.db
+data/*.db-wal
+data/*.db-shm
+data/eval-vitest.json
+.env
+*.log
+apps/web-demo/node_modules/
+apps/web-demo/dist/
