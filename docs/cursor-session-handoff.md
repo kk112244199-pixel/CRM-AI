@@ -23,7 +23,7 @@
 - [engineering-standards.md](./engineering-standards.md)
 - [skill-timeline.md](./skill-timeline.md)
 - [frontend-demo.md](./frontend-demo.md)
-- [contracts/S9.md](./contracts/S9.md)（当前硬上下文；并遵守此前契约）
+- [contracts/S10.md](./contracts/S10.md)（当前硬上下文；并遵守此前契约）
 - 根目录 [README.md](../README.md)
 
 ## 已完成 / 下一刀
@@ -40,7 +40,7 @@
 | **M5 eval** | **已完成** |
 | **M6 = S8 `/frontend-design`** | **已完成**（漏斗轨，只改 `apps/web`） |
 | **S9 向量** | **已完成** |
-| S10 | 未做（可选；需 git 远程） |
+| **S10 筛选 / CSV** | **已完成** |
 
 原型：`npm --prefix apps/web-demo run dev`。不要给 demo 接 API。真控制台：`npm --prefix apps/api start` 与 `npm --prefix apps/web run dev`。根目录复制 `.env.example` 为 `.env`，自己填 `DASHSCOPE_API_KEY` 后走千问。
 
@@ -49,7 +49,7 @@
 | Skill | 本项目何时用 |
 |---|---|
 | `create-plan` | 已用于 S0、S9 |
-| `orchestrate` | **仅 S10** 改本仓库代码，不是销售调度器 |
+| `orchestrate` | 已用于 S10 改本仓库代码，不是销售调度器 |
 | `cursor-sdk` | 说明书；真跑 Agent 在 S6 打 `/sdk` |
 | `agent-development` | S4 写 `runtime/agents` |
 | `skill-development` | S5 写 `runtime/skills` |
@@ -66,8 +66,7 @@
 ## 下一步（把这段贴进新对话）
 
 ```text
-@docs/contracts/S9.md @docs/skill-timeline.md
-S9 已交付。若有 git 远程与 CURSOR_API_KEY，才做 S10：
-/orchestrate 给衡策销管平台加线索列表筛选（按阶段/未转化）与 CSV 导入，含测试与契约文件
+@docs/contracts/S10.md @docs/skill-timeline.md
+S10 已交付（线索筛选与 CSV 导入）。
 不要改漏斗，不要给 web-demo 加 fetch。
 ```

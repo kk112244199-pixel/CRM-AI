@@ -33,7 +33,7 @@ Node/Vite/SQLite **无法对尚未写到磁盘的文件跑测试**。按字面�
 
 ## 分步与契约（原第 2、3 条）
 
-顺序：`M0 文档` → `M0.5 前端点击原型（无后端）` → `M1 种子与库` → `M2 harness` → `M3 控制台接真 API` → `M4 Docker` → `M5 eval` → `M6 视觉` → `S9` 向量。`S10` 筛选/CSV 需 git 远程。何时打 `/` 见 [skill-timeline.md](./skill-timeline.md)。
+顺序：`M0 文档` → `M0.5 前端点击原型（无后端）` → `M1 种子与库` → `M2 harness` → `M3 控制台接真 API` → `M4 Docker` → `M5 eval` → `M6 视觉` → `S9` 向量 → `S10` 筛选/CSV（已交付）。何时打 `/` 见 [skill-timeline.md](./skill-timeline.md)。
 
 每个里程碑结束必须留下清单与契约（先有文件，下一步才能开工）：
 

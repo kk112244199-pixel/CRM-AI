@@ -4,7 +4,7 @@
 
 技术对错见 [tech-selection.md](./tech-selection.md)。验收见 [eval.md](./eval.md)。工程约定见 [engineering-standards.md](./engineering-standards.md)。点击原型见 [frontend-demo.md](./frontend-demo.md)。Skill 何时用见 [skill-timeline.md](./skill-timeline.md)。开发期交接见 [cursor-session-handoff.md](./cursor-session-handoff.md)。
 
-实现顺序与契约：M0–M6、**S9 已完成**。当前硬上下文：[contracts/S9.md](./contracts/S9.md)（并继续遵守此前契约）。何时打 `/` 见 [skill-timeline.md](./skill-timeline.md)。可选下一刀 **S10 `/orchestrate`**（需 git 远程）。
+实现顺序与契约：M0–M6、**S9、S10 已完成**。当前硬上下文：[contracts/S10.md](./contracts/S10.md)（并继续遵守此前契约）。何时打 `/` 见 [skill-timeline.md](./skill-timeline.md)。
 
 ## 1. 一句话
 
@@ -128,7 +128,8 @@ docs/                  本目录
 | 方法 | 路径 | 说明 |
 |---|---|---|
 | POST | `/api/leads/ingest` | 录入自然语言线索；顺序跑系统分配→建档→转化建议 |
-| GET | `/api/leads` | 列表 |
+| GET | `/api/leads` | 列表；可选 `?status=`、`?stage=` 筛选 |
+| POST | `/api/leads/import` | CSV 批量导入新线索（sales/manager） |
 | GET | `/api/leads/:id` | 卡片 + 时间线 |
 | POST | `/api/handoffs/:id/confirm` | HITL 确认 |
 | POST | `/api/handoffs/:id/reject` | HITL 拒绝 |
@@ -163,7 +164,7 @@ docs/                  本目录
 | M5 | eval 黄金切片与报告（已完成；无密钥黄金切片跳过） |
 | M6 | `/frontend-design` 美化（已完成；漏斗轨只改 `apps/web`） |
 | S9 | `searchSimilar` 从 SQL 换 sqlite-vec（已完成） |
-| S10 | 筛选 / CSV（可选，需 git 远程） |
+| S10 | 线索列表筛选与 CSV 导入（已完成） |
 
 ## 14. 验收
 

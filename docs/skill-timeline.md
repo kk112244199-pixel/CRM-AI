@@ -10,17 +10,17 @@
 - [frontend-demo.md](./frontend-demo.md) — 已交付的点击原型怎么点
 - [engineering-standards.md](./engineering-standards.md) — 测不过不算完、无 emoji、中文注释禁区
 - [eval.md](./eval.md) — Q1–Q8、R1–R6，后面每步要对上号
-- [contracts/S9.md](./contracts/S9.md) — **当前硬上下文**：sqlite-vec 相似检索
+- [contracts/S10.md](./contracts/S10.md) — **当前硬上下文**：线索列表筛选与 CSV 导入
 - [cursor-session-handoff.md](./cursor-session-handoff.md) — 新开对话时 `@` 这份即可续上
 
-**当前结论：S9 向量已齐（sqlite-vec `vec_leads`）。可选下一刀是 S10（`/orchestrate` 筛选/CSV，需 git 远程）。不要给 web-demo 加 fetch。不要改漏斗。**
+**当前结论：S10 筛选与 CSV 导入已齐。不要给 web-demo 加 fetch。不要改漏斗。**
 
 ---
 
 ## 0. 新开对话时怎么用本文件
 
 1. `@docs/cursor-session-handoff.md` 和 `@docs/skill-timeline.md`。
-2. 读上一份契约：现在是 S9；并继续遵守 M0 / M0.5 / M1 / M2 / M3 / M4 / M5 / M6。
+2. 读上一份契约：现在是 S10；并继续遵守 M0 / M0.5 / M1 / M2 / M3 / M4 / M5 / M6 / S9。
 3. 只复制**当前步**那一节的灰色代码块到输入框。不要一次把 S4–S10 全贴进去。
 4. 本步结束必须留下 `docs/checklists/M{n}.md` 或 `docs/checklists/S{n}.md`，以及对应契约。没有契约，下一步不准开工。
 5. 测不过 = 本步未完成。不要口头说「差不多了」。
@@ -56,7 +56,7 @@
 
 | 名字 | 实际是什么 | 何时用 |
 |---|---|---|
-| `/orchestrate` | 云端工人改**本仓库代码**（扇出、plan.json、handoff 回主会话） | **仅 S10** |
+| `/orchestrate` | 云端工人改**本仓库代码**（扇出、plan.json、handoff 回主会话） | **S10（已交付）** |
 | `packages/harness` | 按序拉起四个 CRM Agent：系统分配 → 建档 → 商机；跟进只在确认转化之后 | **S6 / M2** 才写，用 `/sdk` |
 
 把 `/orchestrate` 当成销售调度器 = 做错了。把四个 CRM Agent 写成四个销售员 = 做错了。
@@ -82,7 +82,7 @@
 | M5 | eval 黄金切片与报告 | 无 | **已完成** | [eval-last-run.md](./eval-last-run.md)；无密钥 golden 跳过 |
 | S8 / M6 | 真控制台视觉 | `/frontend-design` | **已完成** | 漏斗轨；只改 `apps/web` |
 | S9 | `searchSimilar` 换成 SQLite 向量 | `/create-plan` | **已完成** | sqlite-vec `vec_leads`；不上 GraphRAG、不上独立向量库 |
-| S10 | 筛选 / CSV 导入等并行改代码 | `/orchestrate` | 未做 | M3 能跑、有 git 远程、有 `CURSOR_API_KEY` |
+| S10 | 筛选 / CSV 导入等并行改代码 | `/orchestrate` | **已完成** | `GET /api/leads?status=&stage=`；`POST /api/leads/import`；见 [contracts/S10.md](./contracts/S10.md) |
 
 ---
 
@@ -93,7 +93,7 @@
 | 命令 | 必须显式打出？ | 本项目用法 | 禁止 |
 |---|---|---|---|
 | `/create-plan` | 建议显式打出这几个字 | 已用于 S0；**S9 再开一刀**；只有大改对象模型（加人、改顺序、加回 Redis）时才再开 | 拿它写业务代码；M1 不要再写一份空架构 |
-| `/orchestrate` | **必须**打出这几个字，否则不加载 | **仅 S10** | 调度销售 Agent；M1/M2 不要扇出云端工人 |
+| `/orchestrate` | **必须**打出这几个字，否则不加载 | **S10 已交付** | 调度销售 Agent；M1/M2 不要扇出云端工人 |
 | `/sdk` 或说到 `@cursor/sdk` | `/sdk` 更稳 | **仅 S6/M2** 本地 `Agent.create` + `send` + `wait` + `dispose` | `cloud: { repos }` 开 PR；密钥进前端 |
 | `/create-subagent` | 可显式，或说按 agent-development | **S4** 写 `runtime/agents` 四个文件 | 四份 tools 相同；orchestrator 写成销冠 |
 | `/create-skill` | 可显式，或说按 skill-development | **S5** 只写 `runtime/skills` | 写进 `.cursor/skills`；一篇八千字把 PRD 粘进去 |
@@ -115,7 +115,7 @@
 | 真控制台给你点 | 贴 S7 复制词，新建 `apps/web` | 给 `web-demo` 加 `fetch` |
 | 页面好看 | S7 能演示之后 `/frontend-design` | 先美化 demo |
 | 相似客户从 SQL 换成向量 | `/create-plan`（S9） | 先上 Pinecone / GraphRAG |
-| 给控制台加筛选、CSV 导入（改代码、可并行） | `/orchestrate`（S10） | 用它调度 lead-intake |
+| 给控制台加筛选、CSV 导入（改代码、可并行） | 已完成（S10） | 用它调度 lead-intake |
 
 ---
 
@@ -529,9 +529,12 @@ npm run eval:report    # 生成 docs/eval-last-run.md，不要手写假装通过
 
 ---
 
-### S10（未做）并行改仓库代码
+### S10（已完成）并行改仓库代码
 
-前置：M3 能演示、仓库有 git 远程、环境有 `CURSOR_API_KEY`。这是**改本仓库**，不是跑销售 Agent。
+前置已满足。清单与契约：`docs/checklists/S10.md`、`docs/contracts/S10.md`。
+
+<details>
+<summary>历史复制词（S10 已交付，勿再执行）</summary>
 
 ```text
 /orchestrate 给衡策销管平台加线索列表筛选（按阶段/未转化）与 CSV 导入，含测试与契约文件
@@ -539,12 +542,14 @@ npm run eval:report    # 生成 docs/eval-last-run.md，不要手写假装通过
 
 禁止：用它调度 lead-intake；在 M1/M2 提前扇出；没有远程就开云端工人。
 
+</details>
+
 ---
 
 ## 7. 推荐开工切法（一次一个 M）
 
-1. 已完成：S0、S1、M0、M0.5、M1、S4、S5、M2、M3、M4、M5、M6、**S9**
-2. **可选：S10 `/orchestrate`**（需 git 远程与 `CURSOR_API_KEY`）
+1. 已完成：S0、S1、M0、M0.5、M1、S4、S5、M2、M3、M4、M5、M6、**S9、S10**
+2. 下一刀须先改 PRD 并更新契约；不得 silently 改 M0–S9 闸门
 
 不要在 M1 对话里提前写 M2 的 `Agent.create`。不要在 M3 之前 `/frontend-design`。M6 视觉已交付，不要再改漏斗或给 demo 做视觉。
 
@@ -569,7 +574,7 @@ npm run eval:report    # 生成 docs/eval-last-run.md，不要手写假装通过
 ## 9. 本步之后开新对话可用的最短消息
 
 ```text
-@docs/contracts/S9.md @docs/skill-timeline.md
-S9 已交付。无 git 远程则不要做 S10。
+@docs/contracts/S10.md @docs/skill-timeline.md
+S10 已交付（线索筛选与 CSV 导入）。
 不要改漏斗，不要给 web-demo 加 fetch。
 ```
