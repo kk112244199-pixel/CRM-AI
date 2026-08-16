@@ -34,12 +34,12 @@
       "agentId": "bc-7060a376-07ef-48d3-a9a4-2503623c129a",
       "runId": "run-7072bd58-b498-4eef-862c-81f7608f34d5",
       "parentAgentId": "bc-26f03584-285d-4cb3-b6fe-1c88066a43a2",
-      "status": "running",
-      "resultStatus": null,
-      "handoffPath": null,
+      "status": "handed-off",
+      "resultStatus": "finished",
+      "handoffPath": "handoffs/s10-api.md",
       "startedAt": "2026-08-16T18:51:17.620Z",
-      "finishedAt": null,
-      "lastUpdate": "2026-08-16T18:51:20.188Z",
+      "finishedAt": "2026-08-16T18:54:24.972Z",
+      "lastUpdate": "2026-08-16T18:54:24.973Z",
       "note": "respawned by self-planner (was error; attempts=1)",
       "attempts": 2,
       "slackTs": null,
@@ -63,13 +63,13 @@
       "handoffPath": "handoffs/s10-web.md",
       "startedAt": "2026-08-16T18:51:20.315Z",
       "finishedAt": "2026-08-16T18:52:59.879Z",
-      "lastUpdate": "2026-08-16T18:52:59.879Z",
+      "lastUpdate": "2026-08-16T18:53:00.972Z",
       "note": "respawned by self-planner (was error; attempts=1)",
       "attempts": 2,
       "slackTs": null,
       "prNumber": null,
       "failureMode": null,
-      "verification": null
+      "verification": "unit-test-verified"
     },
     {
       "name": "merge-s10",
@@ -163,6 +163,10 @@
     {
       "at": "2026-08-16T18:51:13.384Z",
       "message": "s10-web: respawned by self-planner (was error)"
+    },
+    {
+      "at": "2026-08-16T18:53:00.973Z",
+      "message": "s10-web: verification self-reported (unit-test-verified)"
     }
   ]
 }
